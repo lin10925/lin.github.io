@@ -1,1 +1,166 @@
-"Hello World"
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>CM Experience Map</title>
+    <style>
+      html, body, #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+    
+     <link rel="stylesheet" href="https://js.arcgis.com/4.15/esri/themes/light/main.css">
+  <script src="https://js.arcgis.com/4.15/"></script>
+  
+    <script>
+  require([
+      "esri/Map",
+      "esri/views/MapView",
+      "esri/widgets/BasemapToggle",
+      "esri/widgets/BasemapGallery",
+      "esri/widgets/Home",
+      "esri/Basemap",
+      "esri/layers/Layer",
+      // "esri/layers/VectorTileLayer"， 
+      "esri/layers/FeatureLayer",
+      "esri/renderers/visualVariables/ColorVariable"
+    ], function(Map, MapView, BasemapToggle, BasemapGallery, Home, Basemap, Layer, FeatureLayer, ColorVariable) {
+    
+    //use default basemap
+    var map = new Map({
+      basemap: "gray-vector"
+    });
+    
+    // set community map as a basemap style
+    // var communityMap = new Basemap({
+    //   baseLayers: [
+    //     new VectorTileLayer({
+    //       portalItem: {
+    //         id: "274684d7a9d74ca4b87f529776feb3a2"
+    //       }
+    //     })
+    //   ]
+    // });
+    
+    var view = new MapView({
+      container: "viewDiv",
+      map: map,
+      center: [-25, 25], // longitude, latitude
+      zoom: 1
+    });
+    
+    //basemapToggle section
+    var basemapToggle = new BasemapToggle({
+      view: view,
+      nextBasemap: "satellite"
+    });
+    
+    view.ui.add(basemapToggle,"bottom-right")
+    
+    //basemap Gallery section
+    var basemapGallery  = new BasemapGallery ({
+      view: view,
+      source: {
+        portal: {
+          url: "https://www.arcgis.com",
+          useVectorBasemaps: true
+        }
+      }
+    });
+    
+    view.ui.add(basemapGallery, "top-right");
+    
+    var homeBtn = new Home({
+          view: view
+        });
+    
+    view.ui.add(homeBtn, "top-left");
+//     // add community map layer
+//     function addLayer(layerItemPromise, index){
+//       return layerItemPromise.then(function(layer){
+//                                    map.add(layer, index);
+//                                    });
+//     }
+    
+//      var CommunityPortalItem = Layer.fromPortalItem({
+//         portalItem: {
+//           id: "273bf8d5c8ac400183fc24e109d20bcf"
+//         }
+//       });
+    
+
+//       addLayer(CommunityPortalItem, 1);
+    
+    // define zoom vars
+    var zoomToGlobeAction = {
+      title: "globe",
+      id: "zoom-globe",
+      className: "esri-icon-globe"
+    };
+    
+    var zoomToLocalAction = {
+      title: "local",
+      id: "zoom-local",
+      className: "esri-icon-maps"
+    };
+    
+    // define popupTemplate
+     var popupTemplate = {
+      title: "{name}",
+      content: [{
+        type: "fields",
+        fieldInfos: [{
+          fieldName: "FeatureCount",
+          label: "Features"},{
+          fieldName: "LayersPublished",
+          label: "Layers"
+          }]
+        }],
+       actions: [zoomToLocalAction, zoomToGlobeAction]
+    };
+     
+
+    // add CM contribution layer (points)
+    var CMcontributionLayer = new FeatureLayer({
+      url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/CMPContributorMetadataViewLayer/FeatureServer/1",
+      popupTemplate: popupTemplate
+    });
+
+    map.add(CMcontributionLayer);
+  
+    function zoomToGlobe() {
+      view.goTo({
+        center: view.popup.selectedFeature.geometry,
+        zoom: 2
+      });
+    }
+    
+    function zoomToLocal() {
+      view.goTo({
+        center: view.popup.selectedFeature.geometry,
+        zoom: 16
+      });
+    }
+    
+    view.popup.on("trigger-action", function(event){
+    // If the zoom-out action is clicked, fire the zoomOut() function
+      if(event.action.id === "zoom-local"){
+      zoomToLocal();
+  }
+      if(event.action.id === "zoom-globe"){
+      zoomToGlobe();
+  }
+});
+    
+  });
+  </script>
+    
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>
