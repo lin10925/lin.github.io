@@ -27,12 +27,92 @@
       "esri/layers/Layer",
       // "esri/layers/VectorTileLayer"， 
       "esri/layers/FeatureLayer",
-      "esri/renderers/visualVariables/ColorVariable"
-    ], function(Map, MapView, BasemapToggle, BasemapGallery, Home, Basemap, Layer, FeatureLayer, ColorVariable) {
+      "esri/widgets/Legend",
+      "esri/widgets/ScaleBar"
+    ], function(Map, MapView, BasemapToggle, BasemapGallery, Home, Basemap, Layer, FeatureLayer, Legend, ScaleBar) {  
+    // define zoom vars
+    var zoomToGlobeAction = {
+      title: "globe",
+      id: "zoom-globe",
+      className: "esri-icon-globe"
+    };
+    
+    var zoomToLocalAction = {
+      title: "local",
+      id: "zoom-local",
+      className: "esri-icon-maps"
+    };
+    
+    // define popupTemplate
+     var popupTemplate = {
+      title: "{name}",
+      content: [{
+        type: "fields",
+        fieldInfos: [{
+          fieldName: "FeatureCount",
+          label: "Features"},{
+          fieldName: "LayersPublished",
+          label: "Layers"
+          }]
+        }],
+       actions: [zoomToLocalAction, zoomToGlobeAction]
+    };
+        
+    //set symbol color
+    const colorVariable = {
+      type: "color",
+      // attribute field to visualize
+      field: "FeatureCount",
+      // map data values to colors
+      // all other values are linearly interpolated
+      stops: [
+        { value: 1, color: "#ffc764" },
+        { value: 50, color: "#ffa143" },
+        { value: 100, color: "#ef6a1d" },
+        { value: 500, color: "#e05919" },
+        { value: 1000, color: "#c0370f" },
+        { value: 2500, color: "#b1260b" },
+        { value: 5000, color: "#910000" },
+      ]
+    };
+    
+    const renderer = {
+      type: "simple",
+      symbol: {
+        type: "simple-marker", 
+        style: "circle",
+        color: [143,52,0,255],
+        size: "4px",
+        outline: {
+          color: "#57220b",
+          width: 0.4
+        }
+      },
+      visualVariables: [colorVariable]
+    };
+
+    // add CM contribution layer (points)
+    var CMcontributionLayer = new FeatureLayer({
+      url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/CMPContributorMetadataViewLayer/FeatureServer/1",
+      popupTemplate: popupTemplate,
+      renderer: renderer
+    });
+
+    //map.add(CMcontributionLayer);
+    
+    // add CM AOI boundary layer
+    var AOILayer = new FeatureLayer({
+        url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/Esri_Community_Maps_AOIs/FeatureServer/7",
+      title: "Area Boundary",
+      maxScale: 0,
+      minScale: 30000
+      });
+    
     
     //use default basemap
     var map = new Map({
-      basemap: "gray-vector"
+      basemap: "gray-vector",
+      layers: [CMcontributionLayer, AOILayer]
     });
     
     // set community map as a basemap style
@@ -95,43 +175,27 @@
 
 //       addLayer(CommunityPortalItem, 1);
     
-    // define zoom vars
-    var zoomToGlobeAction = {
-      title: "globe",
-      id: "zoom-globe",
-      className: "esri-icon-globe"
-    };
+    view.ui.add(
+          new Legend({
+            view: view,
+            layerInfos: [{
+            layer: CMcontributionLayer,
+            title: "Area of Interest"
+  }]
+          }),
+          "bottom-left"
+        );
     
-    var zoomToLocalAction = {
-      title: "local",
-      id: "zoom-local",
-      className: "esri-icon-maps"
-    };
-    
-    // define popupTemplate
-     var popupTemplate = {
-      title: "{name}",
-      content: [{
-        type: "fields",
-        fieldInfos: [{
-          fieldName: "FeatureCount",
-          label: "Features"},{
-          fieldName: "LayersPublished",
-          label: "Layers"
-          }]
-        }],
-       actions: [zoomToLocalAction, zoomToGlobeAction]
-    };
-     
-
-    // add CM contribution layer (points)
-    var CMcontributionLayer = new FeatureLayer({
-      url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/CMPContributorMetadataViewLayer/FeatureServer/1",
-      popupTemplate: popupTemplate
+    // add scale bar
+    var scaleBar = new ScaleBar({
+      view: view
     });
-
-    map.add(CMcontributionLayer);
-  
+    // Add widget to the bottom left corner of the view
+    view.ui.add(scaleBar, {
+      position: "bottom-left"
+    });
+    
+    // define zoom functions
     function zoomToGlobe() {
       view.goTo({
         center: view.popup.selectedFeature.geometry,
@@ -155,6 +219,7 @@
       zoomToGlobe();
   }
 });
+            
     
   });
   </script>
